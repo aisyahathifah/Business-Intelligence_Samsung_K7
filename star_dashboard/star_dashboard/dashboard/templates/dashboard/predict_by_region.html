@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediksi Penjualan per Wilayah - AI Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* Statistics Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+        }
+
+        .stat-number {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 8px;
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .stat-label {
+            font-size: 0.95rem;
+            color: #666;
+            font-weight: 500;
+        }
+
+        /* Chart Containers */
+        .chart-section {
+            margin-bottom: 40px;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .chart-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .chart-item {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .chart-item .chart-wrapper {
+            height: 350px;
+        }
+
+        /* Main Chart Section - untuk Units Sold */
+        .main-chart-section {
+            margin-bottom: 40px;
+        }
+
+        .main-chart-wrapper {
+            position: relative;
+            height: 500px;
+            width: 100%;
+        }
+
+        /* Regional Analysis */
+        .regional-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .regional-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .regional-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+        }
+
+        .regional-item {
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+            transition: transform 0.2s ease;
+        }
+
+        .regional-item:hover {
+            transform: translateX(4px);
+        }
+
+        .regional-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 8px 0;
+        }
+
+        .regional-label {
+            font-weight: 500;
+            color: #4a5568;
+        }
+
+        .regional-value {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 16px;
+            }
+
+            .chart-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .chart-wrapper {
+                height: 300px;
+            }
+
+            .chart-item .chart-wrapper {
+                height: 280px;
+            }
+
+            .main-chart-wrapper {
+                height: 400px;
+            }
+
+            .stat-card {
+                padding: 20px;
+            }
+
+            .stat-number {
+                font-size: 1.8rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .stat-card {
+                padding: 16px;
+            }
+
+            .chart-container, .chart-item {
+                padding: 16px;
+            }
+
+            .chart-wrapper {
+                height: 250px;
+            }
+
+            .chart-item .chart-wrapper {
+                height: 220px;
+            }
+
+            .main-chart-wrapper {
+                height: 300px;
+            }
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🌍 Prediksi Penjualan per Wilayah</h1>
+            <p>Analisis Cerdas dengan Machine Learning & Star Schema</p>
+        </div>
+
+        <!-- Statistics Overview -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-number" id="totalRegions"><div class="loading"></div></div>
+                <div class="stat-label">Top Performing Regions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-number" id="totalRevenue"><div class="loading"></div></div>
+                <div class="stat-label">Total Revenue</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📱</div>
+                <div class="stat-number" id="totalUnits"><div class="loading"></div></div>
+                <div class="stat-label">Total Units Sold</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-number" id="avgAccuracy"><div class="loading"></div></div>
+                <div class="stat-label">Avg AI Accuracy</div>
+            </div>
+        </div>
+
+        <!-- Charts Section - Revenue dan Market Share -->
+        <div class="chart-grid">
+            <!-- Revenue Chart -->
+            <div class="chart-item">
+                <div class="chart-title">💵 Revenue - Aktual vs Prediksi</div>
+                <div class="chart-wrapper">
+                    <canvas id="chartRevenue"></canvas>
+                </div>
+            </div>
+
+            <!-- Market Share Chart -->
+            <div class="chart-item">
+                <div class="chart-title">📊 Market Share by Region</div>
+                <div class="chart-wrapper">
+                    <canvas id="chartMarketShare"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Chart Section - Units Sold (Lebih Besar) -->
+        <div class="main-chart-section">
+            <div class="chart-container">
+                <div class="chart-title">📈 Units Sold - Aktual vs Prediksi (Main Analysis)</div>
+                <div class="main-chart-wrapper">
+                    <canvas id="chartUnits"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Regional Analysis -->
+        <div class="regional-section">
+            <div class="regional-title">🗺️ Regional Insights & 5G Analysis</div>
+            <div class="regional-content" id="regionalAnalysis">
+                <div class="regional-item">
+                    <div class="regional-row">
+                        <span class="regional-label">📊 Data regional sedang dimuat...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Model Performance Section -->
+        <div class="regional-section" style="margin-top: 40px;">
+            <div class="regional-title">🤖 AI Model Performance</div>
+            <div class="regional-content" id="modelPerformance">
+                <div class="regional-item">
+                    <div class="regional-row">
+                        <span class="regional-label">📊 Data model sedang dimuat...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Scripts -->
+    {{ labels|json_script:"labels-data" }}
+    {{ datasets|json_script:"datasets-data" }}
+    {{ regional_insights|json_script:"regional-insights-data" }}
+    {{ overall_stats|json_script:"overall-stats-data" }}
+
+    <script>
+        // Parse data with error handling
+        function parseJsonData(elementId, fallback = []) {
+            try {
+                const element = document.getElementById(elementId);
+                return element ? JSON.parse(element.textContent) : fallback;
+            } catch (e) {
+                console.warn(`Error parsing ${elementId}:`, e);
+                return fallback;
+            }
+        }
+
+        const labels = parseJsonData('labels-data');
+        const datasets = parseJsonData('datasets-data');
+        const regionalInsights = parseJsonData('regional-insights-data');
+        const overallStats = parseJsonData('overall-stats-data');
+
+        console.log('Labels:', labels);
+        console.log('Datasets:', datasets);
+        console.log('Regional Insights:', regionalInsights);
+        console.log('Overall Stats:', overallStats);
+
+        // Chart configuration
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: 'white',
+                    bodyColor: 'white',
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            let value = context.parsed.y;
+                            if (value !== null && value !== undefined) {
+                                return context.dataset.label + ': ' + value.toLocaleString();
+                            }
+                            return context.dataset.label + ': N/A';
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        };
+
+        // Color palettes
+        const colors = {
+            primary: ['#667eea', '#764ba2', '#f093fb'],
+            secondary: ['#4facfe', '#00f2fe', '#43e97b'],
+            accent: ['#fa709a', '#fee140', '#a8edea']
+        };
+
+        // 1. Units Sold Chart (Main Chart - Bigger)
+        if (document.getElementById('chartUnits') && datasets.length > 0) {
+            const ctxUnits = document.getElementById('chartUnits').getContext('2d');
+            const unitsDatasets = [];
+
+            datasets.forEach((regionData, index) => {
+                const colorIndex = index % colors.primary.length;
+                
+                // Actual data
+                unitsDatasets.push({
+                    label: `${regionData.region} - Aktual`,
+                    data: regionData.actuals_units,
+                    borderColor: colors.primary[colorIndex],
+                    backgroundColor: colors.primary[colorIndex] + '20',
+                    fill: true,
+                    borderWidth: 3,
+                    tension: 0.4,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    spanGaps: false
+                });
+
+                // Predicted data
+                unitsDatasets.push({
+                    label: `${regionData.region} - Prediksi`,
+                    data: regionData.predictions,
+                    borderColor: colors.secondary[colorIndex],
+                    borderDash: [5, 5],
+                    fill: false,
+                    borderWidth: 2,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    spanGaps: false
+                });
+            });
+
+            new Chart(ctxUnits, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: unitsDatasets
+                },
+                options: chartOptions
+            });
+        }
+
+        // 2. Revenue Chart
+        if (document.getElementById('chartRevenue') && datasets.length > 0) {
+            const ctxRevenue = document.getElementById('chartRevenue').getContext('2d');
+            const revenueDatasets = [];
+
+            datasets.forEach((regionData, index) => {
+                const colorIndex = index % colors.primary.length;
+                
+                // Actual revenue
+                revenueDatasets.push({
+                    label: `${regionData.region} - Aktual Revenue`,
+                    data: regionData.actuals_revenue,
+                    borderColor: colors.accent[colorIndex],
+                    backgroundColor: colors.accent[colorIndex] + '20',
+                    fill: true,
+                    borderWidth: 3,
+                    tension: 0.4,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    spanGaps: false
+                });
+            });
+
+            new Chart(ctxRevenue, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: revenueDatasets
+                },
+                options: {
+                    ...chartOptions,
+                    plugins: {
+                        ...chartOptions.plugins,
+                        tooltip: {
+                            ...chartOptions.plugins.tooltip,
+                            callbacks: {
+                                label: function(context) {
+                                    let value = context.parsed.y;
+                                    if (value !== null && value !== undefined) {
+                                        return context.dataset.label + ': $' + value.toLocaleString();
+                                    }
+                                    return context.dataset.label + ': N/A';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 3. Market Share Chart
+        if (document.getElementById('chartMarketShare') && datasets.length > 0) {
+            const ctxMarketShare = document.getElementById('chartMarketShare').getContext('2d');
+            const marketShareDatasets = [];
+
+            datasets.forEach((regionData, index) => {
+                const colorIndex = index % colors.primary.length;
+                
+                marketShareDatasets.push({
+                    label: `${regionData.region} Market Share`,
+                    data: regionData.actuals_market_share,
+                    borderColor: colors.secondary[colorIndex],
+                    backgroundColor: colors.secondary[colorIndex] + '30',
+                    fill: true,
+                    borderWidth: 3,
+                    tension: 0.4,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    spanGaps: false
+                });
+            });
+
+            new Chart(ctxMarketShare, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: marketShareDatasets
+                },
+                options: {
+                    ...chartOptions,
+                    plugins: {
+                        ...chartOptions.plugins,
+                        tooltip: {
+                            ...chartOptions.plugins.tooltip,
+                            callbacks: {
+                                label: function(context) {
+                                    let value = context.parsed.y;
+                                    if (value !== null && value !== undefined) {
+                                        return context.dataset.label + ': ' + value.toFixed(1) + '%';
+                                    }
+                                    return context.dataset.label + ': N/A';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        ...chartOptions.scales,
+                        y: {
+                            ...chartOptions.scales.y,
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toFixed(1) + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update Statistics dengan format yang benar
+        function updateStatistics() {
+            try {
+                if (overallStats) {
+                    // Update stat cards dengan format angka yang benar
+                    document.getElementById('totalRegions').textContent = overallStats.total_regions_analyzed || 0;
+                    document.getElementById('totalRevenue').textContent = '$' + (overallStats.total_revenue || 0).toLocaleString();
+                    document.getElementById('totalUnits').textContent = (overallStats.total_units_sold || 0).toLocaleString();
+                    document.getElementById('avgAccuracy').textContent = (overallStats.avg_model_accuracy || 0).toFixed(3);
+                }
+
+                // Generate regional analysis
+                if (regionalInsights && regionalInsights.length > 0) {
+                    const regionalDiv = document.getElementById('regionalAnalysis');
+                    regionalDiv.innerHTML = '';
+                    
+                    regionalInsights.forEach(insight => {
+                        const regionalItem = document.createElement('div');
+                        regionalItem.className = 'regional-item';
+                        regionalItem.innerHTML = `
+                            <h3 style="color: #667eea; margin-bottom: 12px; font-size: 1.1rem;">${insight.region}</h3>
+                            <div class="regional-row">
+                                <span class="regional-label">Total Units:</span>
+                                <span class="regional-value">${insight.total_units_sold.toLocaleString()}</span>
+                            </div>
+                            <div class="regional-row">
+                                <span class="regional-label">Total Revenue:</span>
+                                <span class="regional-value">$${insight.total_revenue.toLocaleString()}</span>
+                            </div>
+                            <div class="regional-row">
+                                <span class="regional-label">Market Share:</span>
+                                <span class="regional-value">${insight.avg_market_share.toFixed(1)}%</span>
+                            </div>
+                            <div class="regional-row">
+                                <span class="regional-label">5G Coverage:</span>
+                                <span class="regional-value">${insight.regional_5g_coverage.toFixed(1)}%</span>
+                            </div>
+                            <div class="regional-row">
+                                <span class="regional-label">5G Subscribers:</span>
+                                <span class="regional-value">${insight.subscribers_5g_million.toFixed(1)}M</span>
+                            </div>
+                            <div class="regional-row">
+                                <span class="regional-label">Avg 5G Speed:</span>
+                                <span class="regional-value">${insight.avg_5g_speed_mbps.toLocaleString()} Mbps</span>
+                            </div>
+                            <div class="regional-row">
+                                <span class="regional-label">5G Preference:</span>
+                                <span class="regional-value">${insight.preference_5g_percent.toFixed(1)}%</span>
+                            </div>
+                            <div class="regional-row">
+                                <span class="regional-label">Quarters Analyzed:</span>
+                                <span class="regional-value">${insight.quarters_analyzed}</span>
+                            </div>
+                        `;
+                        regionalDiv.appendChild(regionalItem);
+                    });
+                }
+
+                // Generate model performance
+                if (datasets && datasets.length > 0) {
+                    const modelDiv = document.getElementById('modelPerformance');
+                    modelDiv.innerHTML = '';
+                    
+                    datasets.forEach(dataset => {
+                        const modelItem = document.createElement('div');
+                        modelItem.className = 'regional-item';
+                        modelItem.innerHTML = `
+                            <h3 style="color: #667eea; margin-bottom: 12px; font-size: 1.1rem;">${dataset.region}</h3>
+                            <div class="regional-row">
+                                <span class="regional-label">R² Score:</span>
+                                <span class="regional-value">${dataset.model_score.toFixed(3)}</span>
+                            </div>
+                            <div class="regional-row">
+                                <span class="regional-label">MAE:</span>
+                                <span class="regional-value">${dataset.mae.toLocaleString()}</span>
+                            </div>
+                            <div class="regional-row">
+                                <span class="regional-label">RMSE:</span>
+                                <span class="regional-value">${dataset.rmse.toLocaleString()}</span>
+                            </div>
+                        `;
+                        modelDiv.appendChild(modelItem);
+                    });
+                }
+            } catch (e) {
+                console.error('Error updating statistics:', e);
+                // Show error state
+                ['totalRegions', 'totalRevenue', 'totalUnits', 'avgAccuracy'].forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element) element.textContent = 'Error';
+                });
+            }
+        }
+
+        // Initialize after DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStatistics();
+        });
+
+        // Fallback initialization
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', updateStatistics);
+        } else {
+            updateStatistics();
+        }
+    </script>
+</body>
+</html>

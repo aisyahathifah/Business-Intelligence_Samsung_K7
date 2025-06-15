@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediksi Penjualan Berdasarkan 5G</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* Statistics Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+        }
+
+        .stat-number {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 0.95rem;
+            color: #666;
+            font-weight: 500;
+        }
+
+        /* Chart Containers */
+        .chart-section {
+            margin-bottom: 40px;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .chart-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .chart-item {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .chart-item .chart-wrapper {
+            height: 350px;
+        }
+
+        /* Regional Analysis */
+        .regional-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .regional-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .regional-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+        }
+
+        .regional-item {
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+            transition: transform 0.2s ease;
+        }
+
+        .regional-item:hover {
+            transform: translateX(4px);
+        }
+
+        .regional-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 8px 0;
+        }
+
+        .regional-label {
+            font-weight: 500;
+            color: #4a5568;
+        }
+
+        .regional-value {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 16px;
+            }
+
+            .chart-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .chart-wrapper {
+                height: 300px;
+            }
+
+            .chart-item .chart-wrapper {
+                height: 280px;
+            }
+
+            .stat-card {
+                padding: 20px;
+            }
+
+            .stat-number {
+                font-size: 1.8rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .stat-card {
+                padding: 16px;
+            }
+
+            .chart-container, .chart-item {
+                padding: 16px;
+            }
+
+            .chart-wrapper {
+                height: 250px;
+            }
+
+            .chart-item .chart-wrapper {
+                height: 220px;
+            }
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📊 Prediksi Penjualan 5G</h1>
+            <p>Dashboard Analisis Dampak 5G terhadap Penjualan Produk</p>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📱</div>
+                <div class="stat-number" id="total5G"><div class="loading"></div></div>
+                <div class="stat-label">Total Penjualan 5G</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📞</div>
+                <div class="stat-number" id="totalNon5G"><div class="loading"></div></div>
+                <div class="stat-label">Total Penjualan Non-5G</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-number" id="ratio5G"><div class="loading"></div></div>
+                <div class="stat-label">Market Share 5G</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📲</div>
+                <div class="stat-number" id="totalUnit"><div class="loading"></div></div>
+                <div class="stat-label">Total Unit Sold</div>
+            </div>
+        </div>
+
+        <!-- Combined Chart -->
+        <div class="chart-section">
+            <div class="chart-container">
+                <h3 class="chart-title">📈 Tren Penjualan Gabungan (5G + Non-5G)</h3>
+                <div class="chart-wrapper">
+                    <canvas id="chartCombined"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Separate Charts -->
+        <div class="chart-grid">
+            <div class="chart-item">
+                <h3 class="chart-title">🚀 Penjualan Produk 5G</h3>
+                <div class="chart-wrapper">
+                    <canvas id="chart5G"></canvas>
+                </div>
+            </div>
+            <div class="chart-item">
+                <h3 class="chart-title">📱 Penjualan Produk Non-5G</h3>
+                <div class="chart-wrapper">
+                    <canvas id="chartNon5G"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comparison Chart -->
+        <div class="chart-section">
+            <div class="chart-container">
+                <h3 class="chart-title">⚡ Perbandingan 5G vs Non-5G</h3>
+                <div class="chart-wrapper">
+                    <canvas id="chartComparison"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Regional Analysis -->
+        <div class="regional-section">
+            <h3 class="regional-title">🌍 Analisis Dampak Regional 5G</h3>
+            <div class="regional-content" id="regionalAnalysis">
+                <div class="regional-item">
+                    <div class="regional-row">
+                        <span class="regional-label">📊 Data regional sedang dimuat...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Scripts -->
+    {{ labels|json_script:"labels-data" }}
+    {{ actuals|json_script:"actuals-data" }}
+    {{ predictions|json_script:"predictions-data" }}
+    {{ actuals_5g|json_script:"actuals-5g-data" }}
+    {{ actuals_non5g|json_script:"actuals-non5g-data" }}
+    {{ predictions_5g|json_script:"predictions-5g-data" }}
+    {{ predictions_non5g|json_script:"predictions-non5g-data" }}
+
+    <script>
+        // Parse data with error handling
+        function parseJsonData(elementId, fallback = []) {
+            try {
+                const element = document.getElementById(elementId);
+                return element ? JSON.parse(element.textContent) : fallback;
+            } catch (e) {
+                console.warn(`Error parsing ${elementId}:`, e);
+                return fallback;
+            }
+        }
+
+        const labels = parseJsonData('labels-data');
+        const actuals = parseJsonData('actuals-data');
+        const predictions = parseJsonData('predictions-data');
+        const actuals5G = parseJsonData('actuals-5g-data');
+        const actualsNon5G = parseJsonData('actuals-non5g-data');
+        const predictions5G = parseJsonData('predictions-5g-data');
+        const predictionsNon5G = parseJsonData('predictions-non5g-data');
+
+        // Chart configuration
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: 'white',
+                    bodyColor: 'white',
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + ' units';
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        };
+
+        // Chart colors
+        const colors = {
+            primary: '#667eea',
+            secondary: '#764ba2',
+            success: '#10b981',
+            warning: '#f59e0b',
+            danger: '#ef4444',
+            info: '#3b82f6'
+        };
+
+        // 1. Combined Chart
+        if (document.getElementById('chartCombined')) {
+            const ctxCombined = document.getElementById('chartCombined').getContext('2d');
+            new Chart(ctxCombined, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Penjualan Aktual Total',
+                            data: actuals,
+                            borderColor: colors.primary,
+                            backgroundColor: colors.primary + '20',
+                            fill: true,
+                            borderWidth: 3,
+                            tension: 0.4,
+                            pointRadius: 6,
+                            pointHoverRadius: 8
+                        },
+                        {
+                            label: 'Prediksi Penjualan Total',
+                            data: predictions,
+                            borderColor: colors.secondary,
+                            borderDash: [5, 5],
+                            fill: false,
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        }
+                    ]
+                },
+                options: chartOptions
+            });
+        }
+
+        // 2. 5G Products Chart
+        if (document.getElementById('chart5G')) {
+            const ctx5G = document.getElementById('chart5G').getContext('2d');
+            new Chart(ctx5G, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Penjualan 5G Aktual',
+                            data: actuals5G,
+                            borderColor: colors.success,
+                            backgroundColor: colors.success + '20',
+                            fill: true,
+                            borderWidth: 3,
+                            tension: 0.4,
+                            pointRadius: 6,
+                            pointHoverRadius: 8
+                        },
+                        {
+                            label: 'Prediksi Penjualan 5G',
+                            data: predictions5G,
+                            borderColor: colors.info,
+                            borderDash: [5, 5],
+                            fill: false,
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        }
+                    ]
+                },
+                options: chartOptions
+            });
+        }
+
+        // 3. Non-5G Products Chart
+        if (document.getElementById('chartNon5G')) {
+            const ctxNon5G = document.getElementById('chartNon5G').getContext('2d');
+            new Chart(ctxNon5G, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Penjualan Non-5G Aktual',
+                            data: actualsNon5G,
+                            borderColor: colors.danger,
+                            backgroundColor: colors.danger + '20',
+                            fill: true,
+                            borderWidth: 3,
+                            tension: 0.4,
+                            pointRadius: 6,
+                            pointHoverRadius: 8
+                        },
+                        {
+                            label: 'Prediksi Penjualan Non-5G',
+                            data: predictionsNon5G,
+                            borderColor: colors.warning,
+                            borderDash: [5, 5],
+                            fill: false,
+                            borderWidth: 2,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        }
+                    ]
+                },
+                options: chartOptions
+            });
+        }
+
+        // 4. Comparison Chart
+        if (document.getElementById('chartComparison')) {
+            const ctxComparison = document.getElementById('chartComparison').getContext('2d');
+            new Chart(ctxComparison, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Produk 5G',
+                            data: actuals5G,
+                            backgroundColor: colors.success + 'CC',
+                            borderColor: colors.success,
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            borderSkipped: false,
+                        },
+                        {
+                            label: 'Produk Non-5G',
+                            data: actualsNon5G,
+                            backgroundColor: colors.danger + 'CC',
+                            borderColor: colors.danger,
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            borderSkipped: false,
+                        }
+                    ]
+                },
+                options: {
+                    ...chartOptions,
+                    scales: {
+                        ...chartOptions.scales,
+                        x: {
+                            ...chartOptions.scales.x,
+                            stacked: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // Calculate and display statistics
+        function updateStatistics() {
+            try {
+                const total5G = actuals5G.reduce((a, b) => a + b, 0);
+                const totalNon5G = actualsNon5G.reduce((a, b) => a + b, 0);
+                const grandTotal = total5G + totalNon5G;
+                const ratio5G = grandTotal > 0 ? ((total5G / grandTotal) * 100).toFixed(1) : 0;
+                
+                // Update stat cards
+                document.getElementById('total5G').textContent = total5G.toLocaleString();
+                document.getElementById('totalNon5G').textContent = totalNon5G.toLocaleString();
+                document.getElementById('ratio5G').textContent = ratio5G + '%';
+                document.getElementById('totalUnit').textContent = grandTotal.toLocaleString();
+                
+                // Generate regional analysis
+                if (actuals5G.length > 1) {
+                    const growth5G = actuals5G[0] > 0 ? ((actuals5G[actuals5G.length - 1] - actuals5G[0]) / actuals5G[0] * 100).toFixed(1) : 0;
+                    const growthNon5G = actualsNon5G[0] > 0 ? ((actualsNon5G[actualsNon5G.length - 1] - actualsNon5G[0]) / actualsNon5G[0] * 100).toFixed(1) : 0;
+                    
+                    const regionalDiv = document.getElementById('regionalAnalysis');
+                    regionalDiv.innerHTML = `
+                        <div class="regional-item">
+                            <div class="regional-row">
+                                <span class="regional-label">📈 Tingkat Pertumbuhan 5G:</span>
+                                <span class="regional-value">${growth5G}%</span>
+                            </div>
+                        </div>
+                        <div class="regional-item">
+                            <div class="regional-row">
+                                <span class="regional-label">📉 Tingkat Pertumbuhan Non-5G:</span>
+                                <span class="regional-value">${growthNon5G}%</span>
+                            </div>
+                        </div>
+                        <div class="regional-item">
+                            <div class="regional-row">
+                                <span class="regional-label">🚀 Penetrasi Pasar 5G:</span>
+                                <span class="regional-value">${ratio5G}% dari total penjualan</span>
+                            </div>
+                        </div>
+                        <div class="regional-item">
+                            <div class="regional-row">
+                                <span class="regional-label">📊 Tren Pasar:</span>
+                                <span class="regional-value">${parseFloat(growth5G) > parseFloat(growthNon5G) ? 'Produk 5G menunjukkan pertumbuhan lebih kuat' : 'Produk Non-5G masih kompetitif'}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (e) {
+                console.error('Error updating statistics:', e);
+                // Show error state
+                ['total5G', 'totalNon5G', 'ratio5G', 'totalUnit'].forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element) element.textContent = 'Error';
+                });
+            }
+        }
+
+        // Initialize after DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStatistics();
+        });
+
+        // Fallback initialization
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', updateStatistics);
+        } else {
+            updateStatistics();
+        }
+    </script>
+</body>
+</html>

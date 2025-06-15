@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediksi Penjualan per Model Produk</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .schema-info {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+            backdrop-filter: blur(10px);
+        }
+
+        .schema-info h3 {
+            font-size: 1rem;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+
+        .schema-info p {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        /* Error Handling */
+        .error-message {
+            background: rgba(248, 113, 113, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Statistics Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+        }
+
+        .stat-number {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 0.95rem;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .stat-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .badge-5g {
+            background: #10b981;
+            color: white;
+        }
+
+        .badge-non5g {
+            background: #6b7280;
+            color: white;
+        }
+
+        .badge-up {
+            background: #059669;
+            color: white;
+        }
+
+        .badge-down {
+            background: #dc2626;
+            color: white;
+        }
+
+        /* Chart Containers */
+        .chart-section {
+            margin-bottom: 40px;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .chart-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 500px;
+            width: 100%;
+        }
+
+        /* Model Statistics Table */
+        .model-stats-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            margin-bottom: 40px;
+        }
+
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+
+        .stats-table th,
+        .stats-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .stats-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .stats-table tr:hover {
+            background: #f8fafc;
+        }
+
+        /* Future Predictions */
+        .predictions-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .prediction-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .prediction-card {
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+            transition: transform 0.2s ease;
+        }
+
+        .prediction-card:hover {
+            transform: translateX(4px);
+        }
+
+        .prediction-model {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .prediction-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .prediction-quarter {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 16px;
+            }
+
+            .chart-wrapper {
+                height: 400px;
+            }
+
+            .stat-card {
+                padding: 20px;
+            }
+
+            .stat-number {
+                font-size: 1.8rem;
+            }
+
+            .stats-table {
+                font-size: 0.9rem;
+            }
+
+            .stats-table th,
+            .stats-table td {
+                padding: 8px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .stat-card {
+                padding: 16px;
+            }
+
+            .chart-container {
+                padding: 16px;
+            }
+
+            .chart-wrapper {
+                height: 300px;
+            }
+
+            .stats-table {
+                font-size: 0.8rem;
+            }
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📱 Prediksi Penjualan Galaxy</h1>
+            <p>Analisis dan prediksi penjualan berdasarkan model produk menggunakan Machine Learning</p>
+            
+            {% if schema_info %}
+            <div class="schema-info">
+                <h3>🗄️ Star Schema Architecture</h3>
+                <p><strong>Fact Table:</strong> {{ schema_info.fact_table }} | <strong>Dimensions:</strong> {{ schema_info.dimensions|join:", " }} | <strong>Metrics:</strong> {{ schema_info.metrics|join:", " }}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Error Handling -->
+        {% if error %}
+        <div class="error-message">
+            <h3>⚠️ Terjadi Kesalahan</h3>
+            <p>{{ error }}</p>
+        </div>
+        {% else %}
+
+        <!-- Top Models Statistics -->
+        {% if top_models %}
+        <div class="stats-grid">
+            {% for model in top_models %}
+            <div class="stat-card">
+                <div class="stat-icon">🏆</div>
+                <div class="stat-number">{{ model.total_sales|floatformat:0 }}</div>
+                <div class="stat-label">{{ model.product__model_name }}</div>
+                <div class="stat-label">Revenue: ${{ model.total_revenue|floatformat:0 }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Main Chart -->
+        <div class="chart-section">
+            <div class="chart-container">
+                <h2 class="chart-title">{{ chart_title|default:"Prediksi Penjualan per Model Produk" }}</h2>
+                <div class="chart-wrapper">
+                    <canvas id="salesChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Model Statistics Table -->
+        {% if model_stats %}
+        <div class="model-stats-section">
+            <h2 class="chart-title">📊 Statistik Model Terperinci</h2>
+            <div style="overflow-x: auto;">
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th>Model</th>
+                            <th>5G</th>
+                            <th>Total Units</th>
+                            <th>Total Revenue</th>
+                            <th>Avg/Quarter</th>
+                            <th>Trend</th>
+                            <th>R² Score</th>
+                            <th>MAE</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stat in model_stats %}
+                        <tr>
+                            <td><strong>{{ stat.model_name }}</strong></td>
+                            <td>
+                                {% if stat.is_5g %}
+                                    <span class="stat-badge badge-5g">5G</span>
+                                {% else %}
+                                    <span class="stat-badge badge-non5g">Non-5G</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ stat.total_units|floatformat:0 }}</td>
+                            <td>${{ stat.total_revenue|floatformat:0 }}</td>
+                            <td>{{ stat.avg_units_per_quarter|floatformat:0 }}</td>
+                            <td>
+                                {% if stat.trend_units == 'Naik' %}
+                                    <span class="stat-badge badge-up">📈 {{ stat.trend_units }}</span>
+                                {% else %}
+                                    <span class="stat-badge badge-down">📉 {{ stat.trend_units }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ stat.r2_score }}</td>
+                            <td>{{ stat.mae }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Future Predictions -->
+        {% if future_predictions %}
+        <div class="predictions-section">
+            <h2 class="chart-title">🔮 Prediksi Quarter Berikutnya</h2>
+            <div class="prediction-grid">
+                {% for prediction in future_predictions %}
+                <div class="prediction-card">
+                    <div class="prediction-model">{{ prediction.model_name }}</div>
+                    <div class="prediction-value">{{ prediction.predicted_units|floatformat:0 }} units</div>
+                    <div class="prediction-quarter">{{ prediction.quarter }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% endif %}
+    </div>
+
+    <!-- Chart.js Script -->
+    <script>
+        // Get data from Django context
+        const labelsData = {{ labels|safe }};
+        const datasetsData = {{ datasets|safe }};
+        const hasError = {% if error %}true{% else %}false{% endif %};
+        const chartTitle = "{{ chart_title|default:'Prediksi Penjualan per Model Produk' }}";
+
+        // Only initialize chart if no error and data exists
+        if (!hasError && labelsData && datasetsData && labelsData.length > 0) {
+            document.addEventListener('DOMContentLoaded', function() {
+                try {
+                    const ctx = document.getElementById('salesChart').getContext('2d');
+                    
+                    const chart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labelsData,
+                            datasets: datasetsData
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            interaction: {
+                                mode: 'index',
+                                intersect: false,
+                            },
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                    labels: {
+                                        boxWidth: 12,
+                                        padding: 15,
+                                        font: {
+                                            family: 'Inter',
+                                            size: 12
+                                        }
+                                    }
+                                },
+                                title: {
+                                    display: true,
+                                    text: chartTitle,
+                                    font: {
+                                        family: 'Inter',
+                                        size: 16,
+                                        weight: '600'
+                                    },
+                                    padding: {
+                                        top: 10,
+                                        bottom: 30
+                                    }
+                                },
+                                tooltip: {
+                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                    titleFont: {
+                                        family: 'Inter',
+                                        size: 14,
+                                        weight: '600'
+                                    },
+                                    bodyFont: {
+                                        family: 'Inter',
+                                        size: 12
+                                    },
+                                    cornerRadius: 8,
+                                    displayColors: true,
+                                    callbacks: {
+                                        label: function(context) {
+                                            let label = context.dataset.label || '';
+                                            if (label) {
+                                                label += ': ';
+                                            }
+                                            if (typeof context.parsed.y === 'number') {
+                                                label += new Intl.NumberFormat().format(context.parsed.y) + ' units';
+                                            } else {
+                                                label += context.parsed.y + ' units';
+                                            }
+                                            return label;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    display: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Quarter',
+                                        font: {
+                                            family: 'Inter',
+                                            size: 14,
+                                            weight: '600'
+                                        }
+                                    },
+                                    grid: {
+                                        color: 'rgba(0, 0, 0, 0.1)'
+                                    },
+                                    ticks: {
+                                        font: {
+                                            family: 'Inter',
+                                            size: 11
+                                        }
+                                    }
+                                },
+                                y: {
+                                    display: true,
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Units Sold',
+                                        font: {
+                                            family: 'Inter',
+                                            size: 14,
+                                            weight: '600'
+                                        }
+                                    },
+                                    grid: {
+                                        color: 'rgba(0, 0, 0, 0.1)'
+                                    },
+                                    ticks: {
+                                        font: {
+                                            family: 'Inter',
+                                            size: 11
+                                        },
+                                        callback: function(value) {
+                                            return new Intl.NumberFormat().format(value);
+                                        }
+                                    }
+                                }
+                            },
+                            elements: {
+                                line: {
+                                    tension: 0.1
+                                },
+                                point: {
+                                    radius: 4,
+                                    hoverRadius: 6,
+                                    hitRadius: 8
+                                }
+                            },
+                            animation: {
+                                duration: 1500,
+                                easing: 'easeInOutQuart'
+                            }
+                        }
+                    });
+
+                    // Add loading state handling
+                    const chartWrapper = document.querySelector('.chart-wrapper');
+                    chartWrapper.style.opacity = '0';
+                    chartWrapper.style.transition = 'opacity 0.5s ease';
+                    
+                    setTimeout(() => {
+                        chartWrapper.style.opacity = '1';
+                    }, 100);
+
+                } catch (error) {
+                    console.error('Error initializing chart:', error);
+                    document.getElementById('salesChart').style.display = 'none';
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'error-message';
+                    errorDiv.innerHTML = '<h3>⚠️ Error Loading Chart</h3><p>Unable to render chart data: ' + error.message + '</p>';
+                    document.querySelector('.chart-wrapper').appendChild(errorDiv);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
